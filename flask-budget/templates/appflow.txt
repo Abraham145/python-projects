@@ -1,0 +1,23 @@
+User clicks "Login"
+    ↓
+[Flask App: Redirect to Google OAuth URL]
+    ↓
+[Google OAuth: Show consent screen]
+    ↓
+User approves (or denies)
+    ↓
+[Google OAuth: Redirect to Flask /callback with auth code]
+    ↓
+[Flask App: Exchange auth code for tokens]
+    ↓
+[Google Token Endpoint: Return access_token and id_token]
+    ↓
+[Flask App: Fetch user info using access_token]
+    ↓
+[Flask App: Save user info in session]
+    ↓
+User sees "Hello, [Name]! Logout" on home page
+    ↓
+User clicks "Logout"
+    ↓
+[Flask App: Clear session and redirect to home page]
