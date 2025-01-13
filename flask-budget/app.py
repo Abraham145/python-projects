@@ -76,13 +76,23 @@ def home():
     # Check if the user is logged in
     if 'user' in session:
         user = session['user']
-        return f"Hello, {user['name']}! <a href='/logout'>Logout</a>"
+        return render_template('welcome.html', user=user)
     return render_template('login.html')
 
 
 @app.route('/logout')
 def logout():
     session.pop('user', None)
+    return redirect(url_for('home'))
+
+
+@app.route('/add_expense', methods=['POST'])
+def add_expense():
+    # Process the expense data (here we just log it for demonstration)
+    category = request.form.get('category')
+    amount = request.form.get('amount')
+    description = request.form.get('description')
+    print(f"Expense added: {category}, ${amount}, {description}")
     return redirect(url_for('home'))
 
 
