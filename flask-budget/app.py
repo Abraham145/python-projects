@@ -11,7 +11,7 @@ CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'a_secret_key')  # Ensure to set this in .env for security
 
-# Routes
+
 @app.route('/login')
 def login():
     google_auth_url = "https://accounts.google.com/o/oauth2/auth"
@@ -21,19 +21,16 @@ def login():
         "response_type": "code",
         "scope": "openid email profile",
     }
-    # Construct the full URL
     auth_url = f"{google_auth_url}?{'&'.join(f'{key}={value}' for key, value in params.items())}"
     return redirect(auth_url)
 
 
 @app.route('/callback')
 def callback():
-    # Get the authorization code from the query string
     auth_code = request.args.get('code')
     if not auth_code:
         return "Authorization failed: Missing code", 400
 
-    # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
     token_data = {
         "client_id": CLIENT_ID,
@@ -49,12 +46,10 @@ def callback():
 
     tokens = token_response.json()
     access_token = tokens.get('access_token')
-    id_token = tokens.get('id_token')
 
-    if not access_token or not id_token:
+    if not access_token:
         return "Invalid token response", 400
 
-    # Decode user info
     user_info_url = "https://openidconnect.googleapis.com/v1/userinfo"
     user_info_response = requests.get(
         user_info_url, headers={"Authorization": f"Bearer {access_token}"}
@@ -64,23 +59,26 @@ def callback():
         return f"Failed to fetch user info: {user_info_response.text}", 400
 
     user_info = user_info_response.json()
-
-    # Save user info in session
-    session['user'] = user_info
+    session['user'] = {
+        'name': user_info.get('name'),
+        'email': user_info.get('email'),
+        'picture': user_info.get('picture'),
+    }
 
     return redirect(url_for('home'))
 
 
 @app.route('/')
 def home():
-    # Check if the user is logged in
     if 'user' in session:
         user = session['user']
-        return render_template('welcome.html', user=user)
+        expenses = session.get('expenses', {})
+        expenses = {cat: round(float(amt), 2) for cat, amt in expenses.items()}  # Ensure all amounts are floats
+        return render_template('welcome.html', user=user, expenses=expenses)
     return render_template('login.html')
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user', None)
     return redirect(url_for('home'))
@@ -88,11 +86,33 @@ def logout():
 
 @app.route('/add_expense', methods=['POST'])
 def add_expense():
-    # Process the expense data (here we just log it for demonstration)
-    category = request.form.get('category')
-    amount = request.form.get('amount')
-    description = request.form.get('description')
-    print(f"Expense added: {category}, ${amount}, {description}")
+    """Adds expenses to the session."""
+    if 'expenses' not in session:
+        session['expenses'] = {}
+
+    expenses = session['expenses']
+
+    for category, amount in request.form.items():
+        try:
+            if amount:
+                # Convert amount to float
+                amount = float(amount)
+                expenses[category] = round(expenses.get(category, 0) + amount, 2)
+        except ValueError:
+            # Handle non-numeric input gracefully
+            return f"Invalid expense amount for {category}. Please enter a numeric value.", 400
+
+    # Save updated expenses
+    session['expenses'] = expenses
+    session.modified = True
+    return redirect(url_for('home'))
+
+
+@app.route('/reset_expenses', methods=['POST'])
+def reset_expenses():
+    """Clears all expenses from the session."""
+    session['expenses'] = {}
+    session.modified = True
     return redirect(url_for('home'))
 
 
