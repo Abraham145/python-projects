@@ -57,7 +57,7 @@
                     <div class="card-body">
                         <form id="add-expense-form" class="d-flex flex-wrap align-items-center">
                             {% for category in ['Mortgage', 'Verizon Fios', 'Verizon Cell', 'Car Payment', 'NJNG', 'NJPL', 'Solar', 'Sewer', 'Garbage', 'Water Bill', 'Housekeeping', 'Sapphire CC', 'Amazon CC', 'Costco CC', 'Home Depot', 'Landscaping'] %}
-                            <div class="me-3 mb-3">
+                            <div class="me-3 mb-3 expense-category">
                                 <label for="{{ category }}" class="form-label">{{ category }}</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
@@ -69,11 +69,18 @@
                                         class="form-control expense-input" 
                                         style="width: 150px;" 
                                         placeholder="Amount">
-                                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="deleteCategory('{{ category }}')">Delete</button>
+                                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="deleteCategory(this)">Delete</button>
                                 </div>
                             </div>
                             {% endfor %}
                         </form>
+                        <div class="mt-4">
+                            <label for="new-category" class="form-label">Add New Expense Category</label>
+                            <div class="input-group">
+                                <input type="text" id="new-category" class="form-control" placeholder="Category Name">
+                                <button type="button" class="btn btn-primary ms-2" onclick="addNewCategory()">Add</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -191,11 +198,43 @@
             updateTableAndChart();
         }
 
-        // Function to handle deleting a category
-        function deleteCategory(category) {
-            const categoryElement = document.querySelector(`[name="${category}"]`);
-            const parentElement = categoryElement.closest('.me-3.mb-3');
-            parentElement.remove();
+        // Function to add a new category
+        function addNewCategory() {
+            const categoryInput = document.getElementById('new-category');
+            const categoryName = categoryInput.value.trim();
+
+            if (categoryName === '') {
+                alert('Category name cannot be empty.');
+                return;
+            }
+
+            const form = document.getElementById('add-expense-form');
+            const div = document.createElement('div');
+            div.classList.add('me-3', 'mb-3', 'expense-category');
+
+            div.innerHTML = `
+                <label for="${categoryName}" class="form-label">${categoryName}</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        name="${categoryName}" 
+                        class="form-control expense-input" 
+                        style="width: 150px;" 
+                        placeholder="Amount">
+                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="deleteCategory(this)">Delete</button>
+                </div>
+            `;
+            form.appendChild(div);
+            categoryInput.value = ''; // Clear input field
+        }
+
+        // Function to delete a category
+        function deleteCategory(button) {
+            const parentDiv = button.closest('.expense-category');
+            parentDiv.remove();
         }
 
         // Function to handle resetting expenses
