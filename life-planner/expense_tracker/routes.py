@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
 from expense_tracker import db
 from expense_tracker.models import Expense
 import requests
@@ -94,28 +94,47 @@ def logout():
 
 @main.route('/add_expense', methods=['POST'])
 def add_expense():
-    """Adds a new expense to the database."""
+    """Adds a new expense to the database and returns updated data."""
     if 'user' not in session:
         return redirect(url_for('main.login'))
 
     user_email = session['user']['email']
+    month_year = request.form.get('month_year')  # Retrieve the month_year input
+
     for category, amount in request.form.items():
+        if category == "month_year":
+            continue  # Skip processing this field as a category
+
         try:
             if amount.strip():  # Ensure the input is not empty
                 amount = float(amount)
-                existing_expense = Expense.query.filter_by(user_email=user_email, category=category).first()
+                existing_expense = Expense.query.filter_by(
+                    user_email=user_email, category=category, month_year=month_year
+                ).first()
+
                 if existing_expense:
                     # Update existing expense amount
                     existing_expense.amount += amount
                 else:
                     # Add a new expense
-                    expense = Expense(user_email=user_email, category=category, amount=amount)
+                    expense = Expense(
+                        user_email=user_email, 
+                        category=category, 
+                        amount=amount, 
+                        month_year=month_year
+                    )
                     db.session.add(expense)
         except ValueError:
             return f"Invalid expense amount for {category}. Please enter a numeric value.", 400
 
     db.session.commit()
-    return redirect(url_for('main.home'))
+
+    # Fetch updated data to send back to the frontend
+    updated_expenses = Expense.query.filter_by(user_email=user_email, month_year=month_year).all()
+    response_data = {expense.category: expense.amount for expense in updated_expenses}
+
+    return jsonify({'success': True, 'expenses': response_data})
+
 
 @main.route('/delete_expense/<category>', methods=['POST'])
 def delete_expense(category):
