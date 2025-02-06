@@ -15,7 +15,7 @@ def login():
     google_auth_url = "https://accounts.google.com/o/oauth2/auth"
     params = {
         "client_id": CLIENT_ID,
-        "redirect_uri": url_for('main.callback', _external=True),
+        "redirect_uri": url_for('main.callback', _external=True, _scheme='https'),
         "response_type": "code",
         "scope": "openid email profile",
     }
