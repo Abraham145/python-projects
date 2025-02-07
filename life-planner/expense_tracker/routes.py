@@ -159,4 +159,4 @@ def reset_expenses():
         Expense.query.filter_by(user_email=user_email).delete()
         db.session.commit()
     return redirect(url_for('main.home'))
-#testing gitactions
+#testing           gitactions
