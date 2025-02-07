@@ -7,7 +7,7 @@ Welcome to my project portfolio! Here, you'll find an overview of three applicat
 ### Description
 This app is a straightforward web application designed to use static templates for rendering content. It focuses on:
 - Minimalistic design.
-- Efficient use of HTML templates.
+- Efficient use of HTML yu templates.
 - Fast loading and lightweight performance.
 
 ### Features
